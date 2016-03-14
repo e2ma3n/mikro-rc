@@ -1,0 +1,83 @@
+Programming and idea by : E2MA3N [Iman Homayouni]
+Github : https://github.com/e2ma3n
+Email : e2ma3n@Gmail.com
+Website : http://OSLearn.ir
+License : GPL v3.0
+mikro-rc v1.0 [ mikrotik load balancing and default route control ]
+
+
+Description :
+This program written by E2MA3N for manage and change default route and load balancing with 2 WAN on mikrotik.
+
+
+Dependencies :
+	1. whoami
+	2. sleep
+	3. cat
+	4. head
+	5. tail
+	6. cut
+	7. nano
+	8. openssl
+	9. sshpass
+	10. expr
+	11. grep
+
+
+Install mikro-rc v1.0 :
+	1. chmod +x install.sh
+	2. sudo ./install.sh -i
+
+
+Check dependencies :
+	1. chmod +x install.sh
+	2. sudo ./install.sh -c
+
+
+Usage mikro-rc v1.0 :
+	1. sudo mikro-rc
+
+
+Uninstall mikro-rc v1.0 :
+	1. rm -rf /opt/mikro-rc_v1/
+	2. rm -f /usr/bin/mikro-rc
+
+
+Notes :
+	1. You should run program as root.
+	2. You should edit config file.
+	3. SSH service should run in router and active in firewall.
+	4. Control default router part (in this program) is compatible with all mikrotik routers, just put default gateways in config file.
+	5. Load balancing part (in this program) is compatible with below rules.
+
+
+Testes mikro-rc v1.0 in :
+	1. Debian 8.1.0 64bit netinst, 3.16.0-4-amd64
+	2. LMDE 2 64bit, 3.16.0-4-amd64
+	3. Mikrotik router os v6.30.4
+	4. Mikrotik router os v5.26
+	5. Mikrotik router os v6.6
+
+
+Load balancing using 2 WAN on mikrotik :
+	0. WAN1 = 192.168.1.1, ether 1, connect to WAN1
+	1. WAN2 = 172.16.1.1, ether 2, connect to WAN2
+	2. Connect to router using ssh protocol
+	3. Run :
+
+	4. ip firewall mangle add chain=input in-interface=WAN1 action=mark-connection new-connection-mark=WAN1_conn
+	5. ip firewall mangle add chain=input in-interface=WAN2 action=mark-connection new-connection-mark=WAN2_conn
+	6. ip firewall mangle add chain=output connection-mark=WAN1_conn action=mark-routing new-routing-mark=to_WAN1
+	7. ip firewall mangle add chain=output connection-mark=WAN2_conn action=mark-routing new-routing-mark=to_WAN2
+	8. ip firewall mangle add chain=prerouting dst-address-type=!local in-interface=WAN-OUT per-connection-classifier=both-addresses­-and-ports:2/0 action=mark-connection new-connection-mark=WAN1_conn passthrough=yes
+	9. ip firewall mangle add chain=prerouting dst-address-type=!local in-interface=WAN-OUT per-connection-classifier=both-addresses­-and-ports:2/1 action=mark-connection new-connection-mark=WAN2_conn passthrough=yes
+	10. ip firewall mangle add chain=prerouting connection-mark=WAN1_conn in-interface=WAN-OUT action=mark-routing new-routing-mark=to_WAN1
+	11. ip firewall mangle add chain=prerouting connection-mark=WAN2_conn in-interface=WAN-OUT action=mark-routing new-routing-mark=to_WAN2
+
+	12. ip route add dst-address=0.0.0.0/0 gateway=192.168.1.1 routing-mark=to_WAN1 check-gateway=ping
+	13. ip route add dst-address=0.0.0.0/0 gateway=172.16.1.1 routing-mark=to_WAN2 check-gateway=ping
+	
+	14. ip route add dst-address=0.0.0.0/0 gateway=192.168.1.1 distance=1 check-gateway=ping
+	15. ip route add dst-address=0.0.0.0/0 gateway=172.16.1.1 distance=2 check-gateway=ping
+
+	16. ip firewall nat add chain=srcnat action=masquerade
